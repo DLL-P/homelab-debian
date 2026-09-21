@@ -1,0 +1,34 @@
+# Crafty Controller: painel web para criar/gerenciar servidores de jogos
+# (Minecraft e outros) para os amigos ocasionalmente.
+#
+# ATENÇÃO DE RECURSOS: sua máquina tem só 12GB de RAM total, compartilhados
+# com todo o resto do homelab (Jellyfin, Arr stack, etc.). Configure a
+# memória de CADA servidor de jogo dentro do Crafty com folga (ex: 2-3GB
+# para um Minecraft Paper), e evite rodar múltiplos servidores de jogo
+# pesados ao mesmo tempo que fizer transcodificação no Jellyfin.
+#
+# As portas de jogo (25500-25600) NÃO devem ficar liberadas no firewall o
+# tempo todo — libere só quando for jogar (ver scripts/05-firewall.sh).
+services:
+  crafty:
+    image: registry.gitlab.com/crafty-controller/crafty-4:latest
+    container_name: crafty
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"   # redirecionamento HTTP -> HTTPS
+      - "8443:8443"   # painel web (HTTPS)
+      - "8123:8123"   # dynmap, se algum servidor usar
+      - "25500-25600:25500-25600"   # faixa de portas dos servidores de jogo
+    volumes:
+      - ./crafty/backups:/crafty/backups
+      - ./crafty/logs:/crafty/logs
+      - ./crafty/servers:/crafty/servers
+      - ./crafty/config:/crafty/app/config
+      - ./crafty/import:/crafty/import
+
+networks:
+  default:
+    name: proxy-network
+    external: true

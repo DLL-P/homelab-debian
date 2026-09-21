@@ -1,0 +1,20 @@
+# Segredos reais - nunca commitar
+.env
+*.env
+!*.env.example
+
+# Dados/estado dos containers (ficam no servidor, não no repo)
+stacks/*/data/
+stacks/portainer/portainer_data/
+stacks/npm/data/
+stacks/npm/letsencrypt/
+stacks/media/*/config/
+stacks/tools/*/
+stacks/gameservers/crafty/
+
+# Backups locais
+*.tar.gz
+
+# Diversos
+*.log
+.DS_Store

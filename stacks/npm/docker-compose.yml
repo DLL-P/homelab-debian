@@ -1,0 +1,20 @@
+# Acesso só por IP local (sem domínio público), conforme decidido.
+# Ainda assim usamos o NPM como proxy reverso interno, para acessar os
+# serviços por nome (ex: http://jellyfin.home) em vez de decorar portas.
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "81:81"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+networks:
+  default:
+    name: proxy-network
+    external: true

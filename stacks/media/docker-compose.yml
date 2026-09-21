@@ -1,0 +1,122 @@
+# Stack de mídia (Arr + Jellyfin) — SEM VPN/Gluetun de propósito.
+#
+# BJ-Share e CapybaraBR proíbem o uso de VPN para tráfego de tracker/torrent.
+# Rodar o qBittorrent atrás de uma VPN (Gluetun) violaria essas regras e
+# arrisca banimento da conta. Por isso todo este stack usa a rede normal do
+# Docker/host — o acesso remoto seguro é feito pelo Tailscale (instalado à
+# parte, ver scripts/04-install-tailscale.sh), que não interfere no tráfego
+# de aplicação dos containers.
+#
+# Nenhuma porta aqui deve ser liberada para a internet pública no firewall
+# (ver scripts/05-firewall.sh) — acesso só por LAN ou Tailscale.
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    env_file:
+      - .env
+    environment:
+      - WEBUI_PORT=8080
+    volumes:
+      - ./qbittorrent:/config
+      - ${DOWNLOADS_ROOT}:/downloads
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    env_file:
+      - .env
+    volumes:
+      - ./prowlarr:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    env_file:
+      - .env
+    volumes:
+      - ./sonarr:/config
+      - ${MEDIA_ROOT}/series:/tv
+      - ${DOWNLOADS_ROOT}:/downloads
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    env_file:
+      - .env
+    volumes:
+      - ./radarr:/config
+      - ${MEDIA_ROOT}/filmes:/movies
+      - ${DOWNLOADS_ROOT}:/downloads
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    env_file:
+      - .env
+    volumes:
+      - ./bazarr:/config
+      - ${MEDIA_ROOT}/series:/tv
+      - ${MEDIA_ROOT}/filmes:/movies
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    env_file:
+      - .env
+    volumes:
+      - ./jellyseerr:/app/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    env_file:
+      - .env
+    volumes:
+      - ./jellyfin/config:/config
+      - ./jellyfin/cache:/cache
+      - ${MEDIA_ROOT}:/media
+    ports:
+      - "8096:8096"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Descomente se houver GPU Intel para transcodificação por hardware
+    # (verifique antes com: ls /dev/dri):
+    # devices:
+    #   - /dev/dri:/dev/dri
+    restart: unless-stopped
+
+networks:
+  default:
+    name: proxy-network
+    external: true
