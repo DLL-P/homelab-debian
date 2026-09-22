@@ -33,6 +33,18 @@ Provisionamento completo do homelab, pensado para o seguinte hardware:
   rodar `scripts/01-setup-user.sh` — **nenhuma senha fica gravada em texto
   puro em nenhum arquivo deste repositório**. Defina a senha localmente
   quando o script pedir.
+- **Armazenamento do Docker/containerd**: por padrão o Docker grava tudo em
+  `/var/lib/docker` (e o containerd em `/var/lib/containerd`). Em instalações
+  onde `/var` é uma partição pequena (comum em instalações Debian
+  particionadas manualmente), isso enche rápido só com as imagens da stack de
+  mídia. O `scripts/deploy-all.sh` detecta isso automaticamente e, se
+  necessário, roda `scripts/03b-relocate-docker-storage.sh` para mover ambos
+  para dentro de um dos HDDs (`/mnt/hdd2/docker` e `/mnt/hdd2/containerd` por
+  padrão). Rode esse script manualmente se você ver erros de "no space left
+  on device" ao subir alguma stack.
+- **Se já existir um Apache/Nginx do sistema na porta 80**: o
+  `deploy-all.sh` detecta e pergunta se pode parar e desabilitar o serviço
+  antes de subir o Nginx Proxy Manager (que precisa da porta 80/443/81 livre).
 - **Servidor de jogos**: Crafty Controller, para gerenciar servidores
   (Minecraft e outros) sob demanda para amigos. Dado o total de 12GB de RAM
   compartilhado com todo o resto da stack, configure a memória de cada
@@ -76,6 +88,7 @@ discos e `05-firewall.sh` mexe no firewall):
 ./scripts/01-setup-user.sh dll
 ./scripts/02-setup-disks.sh        # DESTRUTIVO: formata os 2 HDDs
 ./scripts/03-install-docker.sh
+./scripts/03b-relocate-docker-storage.sh   # se /var tiver pouco espaço, ver abaixo
 ./scripts/04-install-tailscale.sh
 ./scripts/07-generate-env.sh
 (cd stacks/portainer && docker compose up -d)

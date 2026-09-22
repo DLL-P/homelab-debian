@@ -26,6 +26,21 @@ confirm "Continuar para instalação do Docker?" || exit 0
 
 echo "=== 3. Docker ==="
 bash scripts/03-install-docker.sh
+
+VAR_FREE_KB=$(df --output=avail /var | tail -1)
+if [ "$VAR_FREE_KB" -lt 8388608 ]; then
+  echo
+  echo "AVISO: /var tem menos de 8GB livres ($((VAR_FREE_KB / 1024))MB)."
+  echo "O Docker guarda imagens em /var/lib/docker por padrão — com pouco"
+  echo "espaço aí, baixar a stack de mídia inteira vai falhar por falta de"
+  echo "espaço em disco no meio do processo."
+  if confirm "Mover o armazenamento do Docker/containerd para ${HDD2_MOUNT:-/mnt/hdd2} agora?"; then
+    bash scripts/03b-relocate-docker-storage.sh "${HDD2_MOUNT:-/mnt/hdd2}"
+  else
+    echo "Seguindo sem mover — se der 'no space left on device' mais adiante,"
+    echo "rode manualmente: ./scripts/03b-relocate-docker-storage.sh"
+  fi
+fi
 confirm "Continuar para instalação do Tailscale?" || exit 0
 
 echo "=== 4. Tailscale (acesso remoto admin) ==="
@@ -41,6 +56,15 @@ echo "=== 6. Portainer ==="
 confirm "Continuar para subir Nginx Proxy Manager?" || exit 0
 
 echo "=== 7. Nginx Proxy Manager ==="
+if sudo ss -tulpn 2>/dev/null | grep -qE ':80 .*apache2|:80 .*nginx\b'; then
+  echo "Detectado um servidor web já rodando na porta 80 (fora do Docker),"
+  echo "que vai colidir com o Nginx Proxy Manager."
+  if confirm "Parar e desabilitar esse serviço agora?"; then
+    SVC=$(sudo ss -tulpn 2>/dev/null | grep -E ':80 ' | grep -oE 'apache2|nginx' | head -1)
+    sudo systemctl stop "$SVC"
+    sudo systemctl disable "$SVC"
+  fi
+fi
 docker network create proxy-network 2>/dev/null || true
 (cd stacks/npm && docker compose up -d)
 confirm "Continuar para subir a stack de mídia (Arr + Jellyfin)?" || exit 0
