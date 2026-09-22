@@ -60,6 +60,7 @@ stacks/media/       Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, FlareSolverr,
 stacks/tools/       Homepage, Uptime Kuma, Scrutiny, Diun
 stacks/gameservers/ Crafty Controller
 docs/POST_DEPLOY.md checklist de configuração manual pós-deploy (interfaces web)
+docs/SERVICES.md    o que é cada software da stack e como configurá-lo
 ```
 
 ## Como rodar
@@ -104,7 +105,8 @@ docker network create proxy-network
 Depois, siga [`docs/POST_DEPLOY.md`](docs/POST_DEPLOY.md) para a
 configuração manual de cada serviço pela interface web (senhas iniciais,
 conectar Sonarr/Radarr ao qBittorrent, apontar bibliotecas do Jellyfin,
-etc.).
+etc.), e [`docs/SERVICES.md`](docs/SERVICES.md) como referência do que cada
+software faz e como configurá-lo em detalhe.
 
 ## Segurança
 
